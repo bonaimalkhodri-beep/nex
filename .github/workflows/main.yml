@@ -1,4 +1,4 @@
-name: Nexus L1 Multi-Node (Complete Config)
+name: Nexus L1 Multi-Node (Final Fix)
 
 on:
   schedule:
@@ -13,11 +13,16 @@ jobs:
         include:
           - node_index: 1
             node_id: "37717766"
-            wallet: "0xd5c41AEBC800EeF7Ca0008d9Da4cd151CE4DF183"
           # - node_index: 2
           #   node_id: "YOUR_KEY_2"
-          #   wallet: "YOUR_EVM_WALLET_ADDRESS"
-          # ... add others following the same pattern
+          # - node_index: 3
+          #   node_id: "YOUR_KEY_3"
+          # - node_index: 4
+          #   node_id: "YOUR_KEY_4"
+          # - node_index: 5
+          #   node_id: "YOUR_KEY_5"
+          # - node_index: 6
+          #   node_id: "YOUR_KEY_6"
 
     runs-on: ubuntu-latest
     timeout-minutes: 355 
@@ -28,19 +33,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libssl-dev git protobuf-compiler curl
 
-      - name: Create Full Configuration
+      - name: Create Configuration Files
         run: |
-          mkdir -p ~/.nexus
-          # We create the config.json with all required fields to skip registration
+          # Create both common directory patterns used by Nexus
+          mkdir -p ~/.nexus ~/.nexus-network
+          
+          # Create the config content
+          # Some versions use 'node_id', some use 'prover_id'
           cat <<EOF > ~/.nexus/config.json
           {
             "node_id": "${{ matrix.node_id }}",
-            "wallet_address": "${{ matrix.wallet }}",
+            "prover_id": "${{ matrix.node_id }}",
             "user_registered": true,
             "node_registered": true
           }
           EOF
-          echo "Configuration file created for Node ${{ matrix.node_index }}"
+          
+          # Copy to the second possible directory location
+          cp ~/.nexus/config.json ~/.nexus-network/config.json
+          
+          echo "Configuration force-injected for Node ${{ matrix.node_index }}"
 
       - name: Install and Run Nexus
         env:
@@ -49,11 +61,14 @@ jobs:
           # Download and install
           curl -sSf https://cli.nexus.xyz/ -o install.sh
           chmod +x install.sh
-          yes "" | ./install.sh
           
-          # Add Nexus to PATH for this session
-          export PATH=$PATH:$HOME/.nexus/bin
-
-          # Run in foreground
-          # We use 'nexus-cli start' which will now find the valid config.json
-          timeout 345m nexus-cli start || echo "Node session finished cycle."
+          # The installer might try to overwrite our config, 
+          # so we run it with 'yes' to skip prompts
+          yes "" | ./install.sh || true
+          
+          # Force the binary into the PATH
+          export PATH=$PATH:$HOME/.nexus/bin:$HOME/.nexus-network/bin
+          
+          # Run the node. 
+          # Note: If 'nexus-cli' command is not found, we use the direct path
+          ~/.nexus/bin/nexus-cli start || ~/.nexus-network/bin/nexus-cli start || echo "Failed to start node."
