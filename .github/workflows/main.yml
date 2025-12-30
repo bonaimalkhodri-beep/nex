@@ -50,7 +50,7 @@ jobs:
       - name: Run Node
         env:
           NONINTERACTIVE: 1
-          WALLET: "0xd5c41AEBC800EeF7Ca0008d9Da4cd151CE4DF183"
+          WALLET: "0x277765Ccac394dd3787397DeE7E9f69F3C985019"
         run: |
           # 1. Force refresh path
           export PATH=$PATH:$HOME/.nexus/bin
