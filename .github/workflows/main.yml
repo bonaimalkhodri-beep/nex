@@ -1,4 +1,4 @@
-name: Nexus L1 Multi-Node (Foreground)
+name: Nexus L1 Multi-Node (Complete Config)
 
 on:
   schedule:
@@ -13,50 +13,47 @@ jobs:
         include:
           - node_index: 1
             node_id: "37717766"
+            wallet: "0x277765Ccac394dd3787397DeE7E9f69F3C985019"
           # - node_index: 2
-          #   node_id: "KEY_2"
-          # - node_index: 3
-          #   node_id: "KEY_3"
-          # - node_index: 4
-          #   node_id: "KEY_4"
-          # - node_index: 5
-          #   node_id: "KEY_5"
-          # - node_index: 6
-          #   node_id: "KEY_6"
+          #   node_id: "YOUR_KEY_2"
+          #   wallet: "YOUR_EVM_WALLET_ADDRESS"
+          # ... add others following the same pattern
 
     runs-on: ubuntu-latest
     timeout-minutes: 355 
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libssl-dev git protobuf-compiler curl
 
-      - name: Initialize Node Configuration
+      - name: Create Full Configuration
         run: |
           mkdir -p ~/.nexus
-          echo "{\"node_id\": \"${{ matrix.node_id }}\"}" > ~/.nexus/config.json
-          # Pre-accepting terms if the CLI looks for a local flag
-          echo "accept_terms: true" >> ~/.nexus/settings.conf || true
+          # We create the config.json with all required fields to skip registration
+          cat <<EOF > ~/.nexus/config.json
+          {
+            "node_id": "${{ matrix.node_id }}",
+            "wallet_address": "${{ matrix.wallet }}",
+            "user_registered": true,
+            "node_registered": true
+          }
+          EOF
+          echo "Configuration file created for Node ${{ matrix.node_index }}"
 
-      - name: Run Nexus Node in Foreground
+      - name: Install and Run Nexus
         env:
           NONINTERACTIVE: 1
         run: |
-          # Download installer
+          # Download and install
           curl -sSf https://cli.nexus.xyz/ -o install.sh
           chmod +x install.sh
-          
-          # Use 'yes' to automatically answer 'Y' or 'Enter' to any prompt during install
           yes "" | ./install.sh
           
-          # Update PATH to ensure nexus-cli is found
+          # Add Nexus to PATH for this session
           export PATH=$PATH:$HOME/.nexus/bin
 
-          # Run in foreground. 
-          # We still use a 350m timeout so the job finishes cleanly before the next 6h cycle starts.
-          timeout 350m nexus-cli start || echo "Node session reached the 6h limit."
+          # Run in foreground
+          # We use 'nexus-cli start' which will now find the valid config.json
+          timeout 345m nexus-cli start || echo "Node session finished cycle."
