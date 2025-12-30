@@ -1,4 +1,4 @@
-name: Nexus L1 Multi-Node (Full-Auto)
+name: Nexus L1 Multi-Node (Final Fix)
 
 on:
   schedule:
@@ -36,20 +36,25 @@ jobs:
       - name: Install and Forced-Register Nexus
         env:
           NONINTERACTIVE: 1
+          # IMPORTANT: Replace with your actual wallet address
+          WALLET: "0xYourWalletAddressHere" 
         run: |
-          # 1. Install Nexus
+          # 1. Install
           curl -sSf https://cli.nexus.xyz/ -o install.sh
           chmod +x install.sh
           yes "" | ./install.sh || true
           
-          # 2. Define binary path
           NEXUS_BIN="/home/runner/.nexus/bin/nexus-cli"
           
-          # 3. Use the CLI's own registration commands to fill the config
-          # This ensures the CLI 'approves' of the configuration
-          echo "Registering Node ${{ matrix.node_index }}..."
-          $NEXUS_BIN register-node "${{ matrix.node_id }}" || echo "ID already set or registration failed."
+          # 2. Register the Wallet first (This creates the config file)
+          echo "Registering Wallet..."
+          $NEXUS_BIN register-user --wallet-address $WALLET
           
-          # 4. Run in foreground
-          echo "Starting Node ${{ matrix.node_index }}..."
-          timeout 345m $NEXUS_BIN start || echo "Node session finished."
+          # 3. Manually overwrite the node_id in the file the CLI just created
+          # This is the most reliable way since the 'register-node' command is failing
+          mkdir -p ~/.nexus
+          echo "{\"node_id\": \"${{ matrix.node_id }}\", \"wallet_address\": \"$WALLET\", \"user_registered\": true}" > ~/.nexus/config.json
+          
+          # 4. Run the node
+          echo "Starting Node ${{ matrix.node_index }} in foreground..."
+          timeout 345m $NEXUS_BIN start || echo "Node session ended."
