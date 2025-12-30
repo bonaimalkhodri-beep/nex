@@ -13,7 +13,7 @@ jobs:
         include:
           - node_index: 1
             node_id: "37717766"
-            wallet: "0x277765Ccac394dd3787397DeE7E9f69F3C985019"
+            wallet: "0xd5c41AEBC800EeF7Ca0008d9Da4cd151CE4DF183"
           # - node_index: 2
           #   node_id: "YOUR_KEY_2"
           #   wallet: "YOUR_EVM_WALLET_ADDRESS"
