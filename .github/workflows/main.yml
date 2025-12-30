@@ -37,7 +37,7 @@ jobs:
         env:
           NONINTERACTIVE: 1
           # REPLACE THIS WITH YOUR REAL WALLET ADDRESS
-          WALLET: "0x1234567890AbcdEf1234567890abCDEf12345678" 
+          WALLET: "0xd5c41AEBC800EeF7Ca0008d9Da4cd151CE4DF183" 
         run: |
           # 1. Install Nexus CLI
           curl -sSf https://cli.nexus.xyz/ -o install.sh
