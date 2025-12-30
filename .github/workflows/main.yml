@@ -1,29 +1,28 @@
-name: Nexus L1 Multi-Node (Hardcoded Keys)
+name: Nexus L1 Multi-Node (Fixed Deps)
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Automatically restarts every 6 hours
-  workflow_dispatch:      # Allows you to start it manually
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   run-nexus-nodes:
     strategy:
       fail-fast: false
       matrix:
-        # Assign each key to a specific node instance
         include:
           - node_index: 1
             node_id: "37717766"
           # - node_index: 2
-          #   node_id: "REPLACE_WITH_KEY_2"
+          #   node_id: "YOUR_KEY_2"
           # - node_index: 3
-          #   node_id: "REPLACE_WITH_KEY_3"
+          #   node_id: "YOUR_KEY_3"
           # - node_index: 4
-          #   node_id: "REPLACE_WITH_KEY_4"
+          #   node_id: "YOUR_KEY_4"
           # - node_index: 5
-          #   node_id: "REPLACE_WITH_KEY_5"
+          #   node_id: "YOUR_KEY_5"
           # - node_index: 6
-          #   node_id: "REPLACE_WITH_KEY_6"
+          #   node_id: "YOUR_KEY_6"
 
     runs-on: ubuntu-latest
     timeout-minutes: 355 
@@ -34,25 +33,25 @@ jobs:
 
       - name: Install System Dependencies
         run: |
-          sudo apt update
-          sudo apt install -y build-essential pkg-config libssl-dev git-all protobuf-compiler curl
+          sudo apt-get update
+          # Changed git-all to git to prevent dependency conflicts
+          sudo apt-get install -y build-essential pkg-config libssl-dev git protobuf-compiler curl
 
       - name: Initialize Node Configuration
         run: |
           mkdir -p ~/.nexus
-          # Directly using the node_id from the matrix
           echo "{\"node_id\": \"${{ matrix.node_id }}\"}" > ~/.nexus/config.json
-          echo "Node ${{ matrix.node_index }} configured with ID: ${{ matrix.node_id }}"
+          echo "Node ${{ matrix.node_index }} initialized."
 
       - name: Run Nexus Node
         env:
           NONINTERACTIVE: 1
         run: |
-          # Download and install
+          # Automated Installation
           curl -sSf https://cli.nexus.xyz/ -o install.sh
           chmod +x install.sh
           ./install.sh
           
           # Start Node in Headless mode
-          # Runs for 5.8 hours then shuts down cleanly for the next cycle
-          timeout 5.8h nexus-cli start --headless || echo "Session cycle finished."
+          # Using 345m (5.75 hours) to ensure clean shutdown before next cycle
+          timeout 345m nexus-cli start --headless || echo "Session cycle finished."
