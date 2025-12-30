@@ -1,4 +1,4 @@
-name: Nexus L1 Multi-Node (Fixed Deps)
+name: Nexus L1 Multi-Node (Foreground)
 
 on:
   schedule:
@@ -14,15 +14,15 @@ jobs:
           - node_index: 1
             node_id: "37717766"
           # - node_index: 2
-          #   node_id: "YOUR_KEY_2"
+          #   node_id: "KEY_2"
           # - node_index: 3
-          #   node_id: "YOUR_KEY_3"
+          #   node_id: "KEY_3"
           # - node_index: 4
-          #   node_id: "YOUR_KEY_4"
+          #   node_id: "KEY_4"
           # - node_index: 5
-          #   node_id: "YOUR_KEY_5"
+          #   node_id: "KEY_5"
           # - node_index: 6
-          #   node_id: "YOUR_KEY_6"
+          #   node_id: "KEY_6"
 
     runs-on: ubuntu-latest
     timeout-minutes: 355 
@@ -34,24 +34,29 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          # Changed git-all to git to prevent dependency conflicts
           sudo apt-get install -y build-essential pkg-config libssl-dev git protobuf-compiler curl
 
       - name: Initialize Node Configuration
         run: |
           mkdir -p ~/.nexus
           echo "{\"node_id\": \"${{ matrix.node_id }}\"}" > ~/.nexus/config.json
-          echo "Node ${{ matrix.node_index }} initialized."
+          # Pre-accepting terms if the CLI looks for a local flag
+          echo "accept_terms: true" >> ~/.nexus/settings.conf || true
 
-      - name: Run Nexus Node
+      - name: Run Nexus Node in Foreground
         env:
           NONINTERACTIVE: 1
         run: |
-          # Automated Installation
+          # Download installer
           curl -sSf https://cli.nexus.xyz/ -o install.sh
           chmod +x install.sh
-          ./install.sh
           
-          # Start Node in Headless mode
-          # Using 345m (5.75 hours) to ensure clean shutdown before next cycle
-          timeout 345m nexus-cli start --headless || echo "Session cycle finished."
+          # Use 'yes' to automatically answer 'Y' or 'Enter' to any prompt during install
+          yes "" | ./install.sh
+          
+          # Update PATH to ensure nexus-cli is found
+          export PATH=$PATH:$HOME/.nexus/bin
+
+          # Run in foreground. 
+          # We still use a 350m timeout so the job finishes cleanly before the next 6h cycle starts.
+          timeout 350m nexus-cli start || echo "Node session reached the 6h limit."
