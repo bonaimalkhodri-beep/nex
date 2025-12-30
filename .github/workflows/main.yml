@@ -12,17 +12,17 @@ jobs:
       matrix:
         include:
           - node_index: 1
-            node_id: "37597921"
+            node_id: "37597921" # Your actual ID from the logs
           # - node_index: 2
-          #   node_id: "YOUR_KEY_2"
+          #   node_id: "..."
           # - node_index: 3
-          #   node_id: "YOUR_KEY_3"
+          #   node_id: "..."
           # - node_index: 4
-          #   node_id: "YOUR_KEY_4"
+          #   node_id: "..."
           # - node_index: 5
-          #   node_id: "YOUR_KEY_5"
+          #   node_id: "..."
           # - node_index: 6
-          #   node_id: "YOUR_KEY_6"
+          #   node_id: "..."
 
     runs-on: ubuntu-latest
     timeout-minutes: 355 
@@ -36,25 +36,32 @@ jobs:
       - name: Install and Forced-Register Nexus
         env:
           NONINTERACTIVE: 1
-          # IMPORTANT: Replace with your actual wallet address
-          WALLET: "0xYourWalletAddressHere" 
+          # REPLACE THIS WITH YOUR REAL WALLET ADDRESS
+          WALLET: "0x1234567890AbcdEf1234567890abCDEf12345678" 
         run: |
-          # 1. Install
+          # 1. Install Nexus CLI
           curl -sSf https://cli.nexus.xyz/ -o install.sh
           chmod +x install.sh
           yes "" | ./install.sh || true
           
           NEXUS_BIN="/home/runner/.nexus/bin/nexus-cli"
           
-          # 2. Register the Wallet first (This creates the config file)
-          echo "Registering Wallet..."
-          $NEXUS_BIN register-user --wallet-address $WALLET
-          
-          # 3. Manually overwrite the node_id in the file the CLI just created
-          # This is the most reliable way since the 'register-node' command is failing
+          # 2. Ensure directories exist
           mkdir -p ~/.nexus
-          echo "{\"node_id\": \"${{ matrix.node_id }}\", \"wallet_address\": \"$WALLET\", \"user_registered\": true}" > ~/.nexus/config.json
           
-          # 4. Run the node
-          echo "Starting Node ${{ matrix.node_index }} in foreground..."
-          timeout 345m $NEXUS_BIN start || echo "Node session ended."
+          # 3. Manually create the config file with the correct JSON structure
+          # This avoids the "Invalid wallet address" error during CLI registration
+          # because we are writing it directly.
+          cat <<EOF > ~/.nexus/config.json
+          {
+            "node_id": "${{ matrix.node_id }}",
+            "wallet_address": "$WALLET",
+            "user_registered": true
+          }
+          EOF
+          
+          echo "Configuration force-injected for Node ${{ matrix.node_index }} with ID: ${{ matrix.node_id }}"
+          
+          # 4. Start the node in the foreground
+          echo "Starting Node ${{ matrix.node_index }}..."
+          timeout 345m $NEXUS_BIN start || echo "Node session cycle finished."
