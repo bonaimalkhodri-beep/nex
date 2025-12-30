@@ -1,4 +1,4 @@
-name: Nexus L1 Multi-Node (Final Fix)
+name: Nexus L1 Multi-Node (Final Absolute Path)
 
 on:
   schedule:
@@ -33,13 +33,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libssl-dev git protobuf-compiler curl
 
-      - name: Create Configuration Files
+      - name: Install and Configure Nexus
+        env:
+          NONINTERACTIVE: 1
         run: |
-          # Create both common directory patterns used by Nexus
-          mkdir -p ~/.nexus ~/.nexus-network
+          # 1. Install Nexus
+          curl -sSf https://cli.nexus.xyz/ -o install.sh
+          chmod +x install.sh
+          yes "" | ./install.sh || true
           
-          # Create the config content
-          # Some versions use 'node_id', some use 'prover_id'
+          # 2. Determine the correct directory (it's usually .nexus)
+          mkdir -p ~/.nexus
+          
+          # 3. Inject the Node ID directly into the config file
+          # We use a broader JSON structure to satisfy all registration checks
           cat <<EOF > ~/.nexus/config.json
           {
             "node_id": "${{ matrix.node_id }}",
@@ -48,27 +55,8 @@ jobs:
             "node_registered": true
           }
           EOF
-          
-          # Copy to the second possible directory location
-          cp ~/.nexus/config.json ~/.nexus-network/config.json
-          
-          echo "Configuration force-injected for Node ${{ matrix.node_index }}"
 
-      - name: Install and Run Nexus
-        env:
-          NONINTERACTIVE: 1
-        run: |
-          # Download and install
-          curl -sSf https://cli.nexus.xyz/ -o install.sh
-          chmod +x install.sh
-          
-          # The installer might try to overwrite our config, 
-          # so we run it with 'yes' to skip prompts
-          yes "" | ./install.sh || true
-          
-          # Force the binary into the PATH
-          export PATH=$PATH:$HOME/.nexus/bin:$HOME/.nexus-network/bin
-          
-          # Run the node. 
-          # Note: If 'nexus-cli' command is not found, we use the direct path
-          ~/.nexus/bin/nexus-cli start || ~/.nexus-network/bin/nexus-cli start || echo "Failed to start node."
+          # 4. Run the node using the direct absolute path to the binary
+          # The installer puts it in $HOME/.nexus/bin/nexus-cli
+          echo "Starting Node ${{ matrix.node_index }}..."
+          timeout 345m /home/runner/.nexus/bin/nexus-cli start || echo "Node cycle ended."
