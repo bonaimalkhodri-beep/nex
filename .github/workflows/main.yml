@@ -1,0 +1,58 @@
+name: Nexus L1 Multi-Node (Hardcoded Keys)
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Automatically restarts every 6 hours
+  workflow_dispatch:      # Allows you to start it manually
+
+jobs:
+  run-nexus-nodes:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Assign each key to a specific node instance
+        include:
+          - node_index: 1
+            node_id: "37717766"
+          # - node_index: 2
+          #   node_id: "REPLACE_WITH_KEY_2"
+          # - node_index: 3
+          #   node_id: "REPLACE_WITH_KEY_3"
+          # - node_index: 4
+          #   node_id: "REPLACE_WITH_KEY_4"
+          # - node_index: 5
+          #   node_id: "REPLACE_WITH_KEY_5"
+          # - node_index: 6
+          #   node_id: "REPLACE_WITH_KEY_6"
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 355 
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential pkg-config libssl-dev git-all protobuf-compiler curl
+
+      - name: Initialize Node Configuration
+        run: |
+          mkdir -p ~/.nexus
+          # Directly using the node_id from the matrix
+          echo "{\"node_id\": \"${{ matrix.node_id }}\"}" > ~/.nexus/config.json
+          echo "Node ${{ matrix.node_index }} configured with ID: ${{ matrix.node_id }}"
+
+      - name: Run Nexus Node
+        env:
+          NONINTERACTIVE: 1
+        run: |
+          # Download and install
+          curl -sSf https://cli.nexus.xyz/ -o install.sh
+          chmod +x install.sh
+          ./install.sh
+          
+          # Start Node in Headless mode
+          # Runs for 5.8 hours then shuts down cleanly for the next cycle
+          timeout 5.8h nexus-cli start --headless || echo "Session cycle finished."
