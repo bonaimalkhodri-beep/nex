@@ -40,7 +40,6 @@ jobs:
             "node_registered": true
           }
           EOF
-          nexus-network register-user --wallet-address ${{ matrix.wallet }}
           echo "Configuration file created for Node ${{ matrix.node_index }}"
 
       - name: Install and Run Nexus
