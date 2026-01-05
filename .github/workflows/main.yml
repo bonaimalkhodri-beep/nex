@@ -23,6 +23,14 @@ jobs:
             node_id: "37687579"
           - node_index: 6
             node_id: "37567546"
+          - node_index: 7
+            node_id: "37691037"
+          - node_index: 8
+            node_id: "37720921"
+          - node_index: 9
+            node_id: "37661407"
+          - node_index: 10
+            node_id: "37570753"
 
     runs-on: ubuntu-latest
     timeout-minutes: 355
