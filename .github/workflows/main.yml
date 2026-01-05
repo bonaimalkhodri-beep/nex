@@ -56,6 +56,7 @@ jobs:
         run: |
           
           echo "starting node"
+          export PATH="$HOME/.nexus/bin:$PATH"
           nexus-cli register-user --wallet-address $WALLET
           nexus-cli register-node --node-id ${{ matrix.node_id }}
           nexus-cli start --headless
