@@ -67,6 +67,6 @@ jobs:
           export PATH="$HOME/.nexus/bin:$PATH"
           nexus-cli register-user --wallet-address $WALLET
           nexus-cli register-node --node-id ${{ matrix.node_id }}
-          nexus-cli start --headless
+          nexus-cli start --max-difficulty small_medium --headless
 
           timeout 345m nexus-network start --node-id ${{ matrix.node_id }} --headless || echo "Session cycle finished."
