@@ -50,9 +50,8 @@ jobs:
 
       - name: Install Nexus Network
         run: |
-          curl -sSf https://cli.nexus.xyz/ -o install.sh
-          chmod +x install.sh
-          NONINTERACTIVE=1 ./install.sh
+          curl https://cli.nexus.xyz/ | sh
+          echo "$HOME/.nexus/bin" >> $GITHUB_PATH
 
       - name: Run Node in Headless Mode
         env:
@@ -62,11 +61,12 @@ jobs:
           # Mock a terminal to prevent OS Error 6
           TERM: xterm
         run: |
+          export PATH=$PATH:$HOME/.nexus/bin
           
-          echo "starting node"
-          export PATH="$HOME/.nexus/bin:$PATH"
-          nexus-cli register-user --wallet-address $WALLET
-          nexus-cli register-node --node-id ${{ matrix.node_id }}
-          nexus-cli start --max-difficulty small_medium --headless
+          echo "Registering Wallet..."
+          nexus-network register-user --wallet-address $WALLET || echo "Wallet already linked."
 
+          echo "Starting Node ${{ matrix.node_index }} in Headless Mode..."
+          
+          # Added --headless to skip the TUI dashboard that causes the crash
           timeout 345m nexus-network start --node-id ${{ matrix.node_id }} --headless || echo "Session cycle finished."
